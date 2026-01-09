@@ -182,31 +182,40 @@ When you're ready to deploy your NestJS application to production, there are som
 
 ```
 .
-├── src/
-│   ├── main.ts                          # Entry point
-│   ├── app.module.ts                    # Root module
-│   ├── app.controller.ts                # Root controller
-│   ├── app.service.ts                   # Root service
-│   └── modules/                         # Feature modules
-│       ├── auth/
-│       ├── tenants/
-│       ├── users/
-│       └── gateway/
-├── test/
-│   └── app.e2e-spec.ts                  # E2E tests
-├── scripts/
-│   ├── init-db.sql                      # Database schema
-│   ├── prometheus.yml                   # Prometheus config
-│   └── alerts.yml                       # Alert rules
-├── .husky/                              # Git hooks
-├── Dockerfile                           # Production image
-├── docker-compose.yml                   # Local dev stack
-├── .gitattributes                       # Git settings
-├── .editorconfig                        # Editor settings
-├── .prettierrc.json                     # Formatter config
-├── commitlint.config.js                 # Commit rules
-├── DEVELOPMENT.md                       # Development guide
-└── package.json                         # Dependencies
+├── src/                             # Source code
+│   ├── main.ts
+│   ├── app.module.ts
+│   └── modules/
+├── test/                            # E2E tests
+├── config/                          # Configuration files
+│   ├── init-db.sql
+│   ├── prometheus.yml
+│   └── alerts.yml
+├── k8s/                             # Kubernetes manifests (AWS EKS)
+│   ├── README.md
+│   ├── namespace.yml
+│   ├── app/
+│   ├── database/
+│   ├── cache/
+│   └── monitoring/
+├── infrastructure/                  # Terraform (AWS IaC)
+│   ├── README.md
+│   ├── main.tf
+│   ├── vpc.tf
+│   ├── rds.tf
+│   ├── eks.tf
+│   ├── security.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── terraform.tfvars.example
+├── Dockerfile                       # Production image
+├── docker-compose.yml               # Local dev stack
+├── .gitattributes                   # Git settings
+├── .prettierrc.json                 # Code formatter config
+├── commitlint.config.js             # Commit rules
+├── DEVELOPMENT.md                   # Development guide
+├── CONTRIBUTING.md                  # Contribution guidelines
+└── package.json                     # Dependencies
 ```
 
 ## Services
@@ -335,13 +344,45 @@ npm run build
 docker build -t multi-tenant-saas-gateway:latest .
 ```
 
-### Kubernetes
+### AWS Infrastructure (Terraform)
 
-Kubernetes manifests (if available) in `k8s/` directory:
+Deploy complete AWS infrastructure with Terraform:
 
 ```bash
+cd infrastructure/
+terraform init
+terraform plan
+terraform apply
+```
+
+See [infrastructure/README.md](infrastructure/README.md) for detailed instructions.
+
+**Creates:**
+- VPC with public/private subnets
+- EKS Kubernetes cluster
+- RDS PostgreSQL database
+- ElastiCache Redis cluster
+- Security groups and IAM roles
+
+### Kubernetes Deployment
+
+Deploy to EKS cluster:
+
+```bash
+# Configure kubectl
+aws eks update-kubeconfig --region us-east-1 --name saas-gateway-eks
+
+# Create secrets
+kubectl create secret generic db-secret \
+  --from-literal=username=gateway_user \
+  --from-literal=password=your-password \
+  -n saas-gateway
+
+# Deploy
 kubectl apply -f k8s/
 ```
+
+See [k8s/README.md](k8s/README.md) for detailed instructions.
 
 ## Contributing
 

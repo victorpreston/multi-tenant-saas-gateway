@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-gateway-config
+  namespace: saas-gateway
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  API_VERSION: "v1"
+  API_PREFIX: "/api"
+  TENANT_HEADER: "x-tenant-id"
+  RATE_LIMIT_GLOBAL: "1000"
+  RATE_LIMIT_PER_TENANT: "500"
+  RATE_LIMIT_PER_USER: "100"
+  JWT_EXPIRATION: "24h"
