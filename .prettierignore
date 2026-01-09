@@ -1,0 +1,40 @@
+// .prettierignore
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+out/
+
+# Environment files
+.env*
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Logs
+logs/
+*.log
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Markdown files (let them be as-is)
+*.md
+
+# Other
+.DS_Store
+.cache/
+.temp/

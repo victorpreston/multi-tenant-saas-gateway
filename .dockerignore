@@ -1,0 +1,15 @@
+.dockerignore
+node_modules
+npm-debug.log
+dist
+coverage
+.git
+.gitignore
+README.md
+.env
+.DS_Store
+.vscode
+.idea
+.nyc_output
+.temp
+.tmp

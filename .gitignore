@@ -1,53 +1,74 @@
-# compiled output
-/dist
-/node_modules
-/build
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+# Build outputs
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
 
-# OS
-.DS_Store
-
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
+# IDE and editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.sln
 .project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
+*.swp
+*.swn
+*~
+.DS_Store
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# dotenv environment variable files
+# Environment files
 .env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
 
-# temp directory
-.temp
-.tmp
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# Tests
+.nyc_output/
+.coverage/
+
+# Docker volumes
+postgres_data/
+redis_data/
+kafka_data/
+zookeeper_data/
+
+# Temporary files
+.temp/
+.tmp/
+*.tmp
+*.bak
+.cache/
+
+# NestJS specific
+.nestjs-cache/
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock

@@ -1,0 +1,73 @@
+groups:
+  - name: gateway-alerts
+    interval: 30s
+    rules:
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: 'rate(gateway_http_requests_total{status=~"5.."}[5m]) > 0.05'
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'High error rate detected for {{ $labels.tenant_id }}'
+          description: 'Error rate is {{ $value | humanizePercentage }} for tenant {{ $labels.tenant_id }}'
+
+      # High latency alert
+      - alert: HighLatency
+        expr: 'histogram_quantile(0.95, rate(gateway_http_request_duration_seconds_bucket[5m])) > 2'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High request latency for {{ $labels.tenant_id }}'
+          description: 'P95 latency is {{ $value }}s for tenant {{ $labels.tenant_id }}'
+
+      # Rate limit exceeded
+      - alert: RateLimitExceeded
+        expr: 'rate(gateway_rate_limit_hits_total[5m]) > 0'
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Rate limit exceeded for {{ $labels.tenant_id }}'
+          description: 'Tenant {{ $labels.tenant_id }} has exceeded rate limits'
+
+      # Database connection issues
+      - alert: DatabaseConnectionError
+        expr: 'gateway_db_connection_errors_total > 0'
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Database connection errors detected'
+          description: 'Database connection errors: {{ $value }}'
+
+      # Redis connection issues
+      - alert: RedisConnectionError
+        expr: 'gateway_redis_connection_errors_total > 0'
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Redis connection errors detected'
+          description: 'Redis connection errors: {{ $value }}'
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: 'container_memory_usage_bytes{name="saas-gateway-app"} / container_spec_memory_limit_bytes > 0.9'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High memory usage in gateway app'
+          description: 'Memory usage is {{ $value | humanizePercentage }}'
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 'rate(container_cpu_usage_seconds_total{name="saas-gateway-app"}[5m]) > 0.8'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High CPU usage in gateway app'
+          description: 'CPU usage is {{ $value | humanizePercentage }}'

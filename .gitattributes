@@ -1,0 +1,59 @@
+# Auto detect text files and normalize line endings to LF
+* text=auto
+
+# TypeScript and JavaScript files
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+
+# JSON files
+*.json text eol=lf
+
+# YAML files
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Markdown files
+*.md text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Docker
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+docker-compose.yml text eol=lf
+docker-compose.yaml text eol=lf
+
+# Config files
+.editorconfig text eol=lf
+.env text eol=lf
+.env.* text eol=lf
+.eslintrc* text eol=lf
+.prettierrc* text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.gz binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.otf binary
+*.db binary
+*.sqlite binary
+
+# Keep line endings as-is (CRLF for Windows scripts)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.exe binary
+*.dll binary
