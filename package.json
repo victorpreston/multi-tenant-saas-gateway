@@ -24,7 +24,11 @@
     "commit": "cz commit",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "db:migrate": "typeorm migration:run -d src/database/config/typeorm.config.ts",
+    "db:migrate:create": "typeorm migration:create src/database/migrations",
+    "db:seed": "ts-node src/seed.ts",
+    "db:reset": "typeorm migration:revert -d src/database/config/typeorm.config.ts && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -33,10 +37,17 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.4",
     "@nestjs/terminus": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
     "joi": "^18.0.2",
+    "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.28",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.3.1",
