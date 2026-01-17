@@ -48,6 +48,8 @@ import { AppService } from './app.service';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('users', 'tenants', 'api-keys');
+    consumer
+      .apply(TenantMiddleware)
+      .forRoutes('users', 'tenants', 'api-keys', 'auth');
   }
 }

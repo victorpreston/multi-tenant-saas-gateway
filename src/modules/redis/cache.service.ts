@@ -5,6 +5,8 @@ import type { Cache } from 'cache-manager';
 @Injectable()
 export class CacheService {
   // Track all cache keys for clearing
+  // Note: In single-instance deployments, this works well.
+  // For distributed environments, consider using Redis SCAN or key patterns.
   private cacheKeys = new Set<string>();
 
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
