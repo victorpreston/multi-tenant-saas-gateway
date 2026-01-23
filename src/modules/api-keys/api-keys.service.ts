@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes, createHmac } from 'crypto';
@@ -15,10 +16,32 @@ import {
 
 @Injectable()
 export class ApiKeysService {
+  private readonly apiKeyMaxActive: number;
+  private readonly apiKeyHashSecret: string;
+  private readonly lastUsedUpdateInterval: number;
+
   constructor(
     @InjectRepository(ApiKey)
     private apiKeyRepository: Repository<ApiKey>,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.apiKeyMaxActive = this.configService.get<number>(
+      'API_KEY_MAX_ACTIVE',
+      10,
+    );
+    this.apiKeyHashSecret = this.configService.get<string>(
+      'API_KEY_HASH_SECRET',
+      '',
+    );
+    this.lastUsedUpdateInterval = this.configService.get<number>(
+      'API_KEY_LAST_USED_UPDATE_INTERVAL',
+      3600000,
+    );
+
+    if (!this.apiKeyHashSecret) {
+      throw new Error('API_KEY_HASH_SECRET environment variable is not set');
+    }
+  }
 
   /**
    * Generate a new API key for a tenant
@@ -32,10 +55,10 @@ export class ApiKeysService {
       where: { tenantId, status: ApiKeyStatus.ACTIVE },
     });
 
-    // Limit to 10 active keys per tenant (configurable)
-    if (existingKeys >= 10) {
+    // Limit to configured max active keys per tenant
+    if (existingKeys >= this.apiKeyMaxActive) {
       throw new BadRequestException(
-        'Maximum number of active API keys reached for this tenant',
+        `Maximum number of active API keys (${this.apiKeyMaxActive}) reached for this tenant`,
       );
     }
 
@@ -187,6 +210,17 @@ export class ApiKeysService {
   }
 
   /**
+   * Check if lastUsedAt should be updated based on interval
+   */
+  private shouldUpdateLastUsed(lastUsedAt: Date | null): boolean {
+    if (!lastUsedAt) {
+      return true;
+    }
+    const now = new Date();
+    return now.getTime() - lastUsedAt.getTime() > this.lastUsedUpdateInterval;
+  }
+
+  /**
    * Validate API key - for authentication
    * Called by ApiKeyStrategy during Passport authentication
    */
@@ -218,9 +252,11 @@ export class ApiKeysService {
       return null;
     }
 
-    // Update last used timestamp
-    apiKey.lastUsedAt = new Date();
-    await this.apiKeyRepository.save(apiKey);
+    // Update last used timestamp, but avoid writing on every request
+    if (this.shouldUpdateLastUsed(apiKey.lastUsedAt)) {
+      apiKey.lastUsedAt = new Date();
+      await this.apiKeyRepository.save(apiKey);
+    }
 
     return apiKey;
   }
@@ -246,10 +282,12 @@ export class ApiKeysService {
   }
 
   /**
-   * Hash secret using HMAC-SHA256
+   * Hash secret using HMAC-SHA256 with configured salt
    */
   private hashSecret(secret: string): string {
-    return createHmac('sha256', 'api-key-salt').update(secret).digest('hex');
+    return createHmac('sha256', this.apiKeyHashSecret)
+      .update(secret)
+      .digest('hex');
   }
 
   /**
@@ -264,7 +302,10 @@ export class ApiKeysService {
     dto.tenantId = apiKey.tenantId;
     dto.name = apiKey.name;
     dto.key = apiKey.key;
-    dto.secret = plainSecret || ''; // Only include if just generated
+    // Only include plain secret if just generated (not empty string)
+    if (plainSecret !== undefined) {
+      dto.secret = plainSecret;
+    }
     dto.status = apiKey.status;
     dto.scopes = apiKey.scopes;
     dto.expiresAt = apiKey.expiresAt || null;

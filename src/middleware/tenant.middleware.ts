@@ -30,6 +30,8 @@ export class TenantMiddleware implements NestMiddleware {
     // Attach tenant ID to request for use in controllers/services
     req.tenantId = tenantId;
 
+    // Extracting and attaching
+    // the tenant identifier.
     next();
   }
 
