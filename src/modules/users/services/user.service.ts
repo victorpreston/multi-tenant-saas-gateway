@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -20,6 +21,8 @@ import { UserCreatedEvent } from '../../../common/events/events';
 
 @Injectable()
 export class UserService {
+  private readonly cacheTtlUser: number;
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -27,7 +30,10 @@ export class UserService {
     private readonly tenantRepository: Repository<Tenant>,
     private readonly eventPublisher: EventPublisherService,
     private readonly cacheService: CacheService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.cacheTtlUser = this.configService.get<number>('CACHE_TTL_USER', 300);
+  }
 
   async create(
     tenantId: string,
@@ -76,21 +82,26 @@ export class UserService {
     await this.cacheService.set(
       this.cacheService.getUserKey(saved.id),
       this.formatResponse(saved),
-      300, // 5 minutes TTL
+      this.cacheTtlUser,
     );
 
     // Invalidate user list cache for tenant
     await this.cacheService.del(this.cacheService.getUserListKey(tenantId));
 
-    // Publish user created event
-    const userCreatedPayload: UserCreatedEvent = {
-      userId: saved.id,
-      email: saved.email,
-      name: saved.name,
-      tenantId: saved.tenantId,
-      createdAt: saved.createdAt,
-    };
-    this.eventPublisher.publishUserCreated(userCreatedPayload);
+    // Publish user created event with fire-and-forget pattern
+    try {
+      const userCreatedPayload: UserCreatedEvent = {
+        userId: saved.id,
+        email: saved.email,
+        name: saved.name,
+        tenantId: saved.tenantId,
+        createdAt: saved.createdAt,
+      };
+      this.eventPublisher.publishUserCreated(userCreatedPayload);
+    } catch (error) {
+      // Log but don't fail the request if event publishing fails
+      console.error('Failed to publish user created event:', error);
+    }
 
     return this.formatResponse(saved);
   }
@@ -101,6 +112,7 @@ export class UserService {
       this.cacheService.getUserKey(userId),
     );
 
+    // Validate cached data belongs to correct tenant
     if (cached && cached.tenantId === tenantId) {
       return cached;
     }
@@ -122,7 +134,7 @@ export class UserService {
     await this.cacheService.set(
       this.cacheService.getUserKey(userId),
       response,
-      300, // 5 minutes TTL
+      this.cacheTtlUser,
     );
 
     return response;
@@ -163,7 +175,7 @@ export class UserService {
     await this.cacheService.set(
       this.cacheService.getUserListKey(tenantId),
       response,
-      300, // 5 minutes TTL
+      this.cacheTtlUser,
     );
 
     return response;
@@ -185,18 +197,30 @@ export class UserService {
       });
     }
 
-    Object.assign(user, payload);
+    // Explicitly set properties instead of Object.assign
+    if (payload.name !== undefined) {
+      user.name = payload.name;
+    }
+    if (payload.status !== undefined) {
+      user.status = payload.status;
+    }
+
     const updated = await this.userRepository.save(user);
 
     // Invalidate user caches
     await this.cacheService.invalidateUser(updated.id, tenantId);
 
-    // Publish user updated event
-    this.eventPublisher.publishUserUpdated({
-      userId: updated.id,
-      tenantId: updated.tenantId,
-      updatedAt: updated.updatedAt,
-    });
+    // Publish user updated event with fire-and-forget pattern
+    try {
+      this.eventPublisher.publishUserUpdated({
+        userId: updated.id,
+        tenantId: updated.tenantId,
+        updatedAt: updated.updatedAt,
+      });
+    } catch (error) {
+      // Log but don't fail the request
+      console.error('Failed to publish user updated event:', error);
+    }
 
     return this.formatResponse(updated);
   }
@@ -213,15 +237,23 @@ export class UserService {
       });
     }
 
-    await this.userRepository.remove(user);
-    // Invalidate user caches
+    // Publish user deleted event before removing (transactional consistency)
+    try {
+      this.eventPublisher.publishUserDeleted({
+        userId: user.id,
+        tenantId: user.tenantId,
+        deletedAt: new Date(),
+      });
+    } catch (error) {
+      // Log but continue with deletion
+      console.error('Failed to publish user deleted event:', error);
+    }
+
+    // Invalidate user caches after event published
     await this.cacheService.invalidateUser(userId, user.tenantId);
-    // Publish user deleted event
-    this.eventPublisher.publishUserDeleted({
-      userId: user.id,
-      tenantId: user.tenantId,
-      deletedAt: new Date(),
-    });
+
+    // Finally remove the user
+    await this.userRepository.remove(user);
   }
 
   private formatResponse(user: User): UserResponseDto {
@@ -230,7 +262,7 @@ export class UserService {
       email: user.email,
       name: user.name,
       tenantId: user.tenantId,
-      status: user.status as unknown as UserStatus,
+      status: user.status,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

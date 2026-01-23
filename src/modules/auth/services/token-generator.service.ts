@@ -54,9 +54,6 @@ export class TokenGeneratorService {
     expiresIn: string,
   ): string {
     const jwtSecret = this.getRequiredConfigString('JWT_SECRET');
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET not configured');
-    }
 
     const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: userId,
@@ -77,9 +74,6 @@ export class TokenGeneratorService {
     expiresIn: string,
   ): string {
     const refreshSecret = this.getRequiredConfigString('JWT_REFRESH_SECRET');
-    if (!refreshSecret) {
-      throw new Error('JWT_REFRESH_SECRET not configured');
-    }
 
     const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: userId,
@@ -109,7 +103,10 @@ export class TokenGeneratorService {
   private getRequiredConfigString<K extends string>(
     key: K & keyof EnvironmentVariables,
   ): string {
-    const value = this.configService.get<string>(key);
-    return String(value);
+    const value = this.configService.get<string | undefined>(key);
+    if (!value) {
+      throw new Error(`Required configuration key not set: ${key}`);
+    }
+    return value;
   }
 }

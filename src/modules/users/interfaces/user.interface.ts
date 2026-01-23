@@ -17,6 +17,11 @@ export interface CreateUserPayload {
   password: string;
 }
 
+/**
+ * UpdateUserPayload - Partial user update
+ * Note: Email updates are not allowed through this endpoint for security reasons.
+ * Password changes should use a separate password change endpoint.
+ */
 export interface UpdateUserPayload {
   name?: string;
   status?: UserStatus;

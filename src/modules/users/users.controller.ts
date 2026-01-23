@@ -8,6 +8,7 @@ import {
   Body,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { UserService } from './services';
@@ -20,18 +21,27 @@ import type { TenantRequest } from '../../middleware/tenant.middleware';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  private getTenantId(req: TenantRequest): string {
+    if (!req.tenantId) {
+      throw new BadRequestException(
+        'Tenant ID is missing from request context',
+      );
+    }
+    return req.tenantId;
+  }
+
   @Post()
   async create(
     @Request() req: TenantRequest,
     @Body() createUserDto: CreateUserDto,
   ): Promise<UserResponseDto> {
-    const tenantId = req.tenantId!;
+    const tenantId = this.getTenantId(req);
     return this.userService.create(tenantId, createUserDto);
   }
 
   @Get()
   async findAll(@Request() req: TenantRequest): Promise<UserResponseDto[]> {
-    const tenantId = req.tenantId!;
+    const tenantId = this.getTenantId(req);
     return this.userService.findAllByTenant(tenantId);
   }
 
@@ -40,7 +50,7 @@ export class UserController {
     @Request() req: TenantRequest,
     @Param('id') userId: string,
   ): Promise<UserResponseDto> {
-    const tenantId = req.tenantId!;
+    const tenantId = this.getTenantId(req);
     return this.userService.findById(tenantId, userId);
   }
 
@@ -50,7 +60,7 @@ export class UserController {
     @Param('id') userId: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    const tenantId = req.tenantId!;
+    const tenantId = this.getTenantId(req);
     return this.userService.update(tenantId, userId, updateUserDto);
   }
 
@@ -59,7 +69,7 @@ export class UserController {
     @Request() req: TenantRequest,
     @Param('id') userId: string,
   ): Promise<{ message: string }> {
-    const tenantId = req.tenantId!;
+    const tenantId = this.getTenantId(req);
     await this.userService.delete(tenantId, userId);
     return { message: 'User deleted successfully' };
   }
