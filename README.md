@@ -130,52 +130,41 @@ When you're ready to deploy your NestJS application to production, there are som
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────┐
-│              CLIENT REQUESTS                     │
-└─────────────────────┬────────────────────────────┘
-                      ▼
-        ┌─────────────────────────────┐
-        │  Kubernetes Load Balancer   │
-        │ (Nginx Ingress Controller)  │
-        └────────────┬────────────────┘
-                     ▼
-        ┌────────────────────────────────────┐
-        │  KONG API GATEWAY CLUSTER          │
-        │  - Authentication & Authorization  │
-        │  - Rate Limiting (Redis)           │
-        │  - Request Routing                 │
-        │  - Multi-tenant Isolation          │
-        └────────────┬──────────────────────┘
-            ┌────────┴─────────┐
-            ▼                  ▼
-       ┌─────────┐       ┌──────────────┐
-       │ Redis   │       │ NestJS API   │
-       │ Cache   │       │ Services     │
-       └─────────┘       └──────┬───────┘
-                                ▼
-               ┌────────────────────────────┐
-               │  PostgreSQL + TimescaleDB  │
-               │  - User & Tenant Data      │
-               │  - Metrics & Analytics     │
-               └────────────────────────────┘
-                                ▼
-               ┌────────────────────────────┐
-               │  Apache Kafka              │
-               │  - Event Streaming         │
-               │  - Audit Logs              │
-               └────────────┬───────────────┘
-            ┌──────────────┴──────────────┐
-            ▼                             ▼
-    ┌──────────────┐           ┌─────────────────┐
-    │ Prometheus   │           │ Kafka Consumers │
-    │ (Monitoring) │           │ - Analytics     │
-    └──────┬───────┘           │ - Billing       │
-           ▼                    │ - Audit Trail   │
-    ┌──────────────┐           └─────────────────┘
-    │ Grafana      │
-    │ (Dashboards) │
-    └──────────────┘
+```mermaid
+flowchart TD
+
+A[Client Applications]
+
+B[Kubernetes Load Balancer<br>Nginx Ingress Controller]
+
+C[Kong API Gateway Cluster<br>Authentication<br>Rate Limiting<br>Routing<br>Tenant Isolation]
+
+D[(Redis Cache)]
+
+E[NestJS API Services]
+
+F[(PostgreSQL + TimescaleDB<br>User Data<br>Metrics)]
+
+G[Apache Kafka]
+
+H[Prometheus Monitoring]
+I[Grafana Dashboards]
+
+J[Kafka Consumers<br>Analytics<br>Billing<br>Audit Trail]
+
+A --> B
+B --> C
+
+C --> D
+C --> E
+
+E --> F
+E --> G
+
+G --> J
+G --> H
+
+H --> I
 ```
 
 ## Project Structure
