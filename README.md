@@ -130,53 +130,9 @@ When you're ready to deploy your NestJS application to production, there are som
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────┐
-│              CLIENT REQUESTS                     │
-└─────────────────────┬────────────────────────────┘
-                      ▼
-        ┌─────────────────────────────┐
-        │  Kubernetes Load Balancer   │
-        │ (Nginx Ingress Controller)  │
-        └────────────┬────────────────┘
-                     ▼
-        ┌────────────────────────────────────┐
-        │  KONG API GATEWAY CLUSTER          │
-        │  - Authentication & Authorization  │
-        │  - Rate Limiting (Redis)           │
-        │  - Request Routing                 │
-        │  - Multi-tenant Isolation          │
-        └────────────┬──────────────────────┘
-            ┌────────┴─────────┐
-            ▼                  ▼
-       ┌─────────┐       ┌──────────────┐
-       │ Redis   │       │ NestJS API   │
-       │ Cache   │       │ Services     │
-       └─────────┘       └──────┬───────┘
-                                ▼
-               ┌────────────────────────────┐
-               │  PostgreSQL + TimescaleDB  │
-               │  - User & Tenant Data      │
-               │  - Metrics & Analytics     │
-               └────────────────────────────┘
-                                ▼
-               ┌────────────────────────────┐
-               │  Apache Kafka              │
-               │  - Event Streaming         │
-               │  - Audit Logs              │
-               └────────────┬───────────────┘
-            ┌──────────────┴──────────────┐
-            ▼                             ▼
-    ┌──────────────┐           ┌─────────────────┐
-    │ Prometheus   │           │ Kafka Consumers │
-    │ (Monitoring) │           │ - Analytics     │
-    └──────┬───────┘           │ - Billing       │
-           ▼                    │ - Audit Trail   │
-    ┌──────────────┐           └─────────────────┘
-    │ Grafana      │
-    │ (Dashboards) │
-    └──────────────┘
-```
+<p align="center">
+  <img src="docs/images/architecture.png" alt="System Architecture Diagram" width="700" />
+</p>
 
 ## Project Structure
 
