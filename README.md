@@ -130,42 +130,9 @@ When you're ready to deploy your NestJS application to production, there are som
 
 ## Architecture
 
-```mermaid
-flowchart TD
-
-A[Client Applications]
-
-B[Kubernetes Load Balancer<br>Nginx Ingress Controller]
-
-C[Kong API Gateway Cluster<br>Authentication<br>Rate Limiting<br>Routing<br>Tenant Isolation]
-
-D[(Redis Cache)]
-
-E[NestJS API Services]
-
-F[(PostgreSQL + TimescaleDB<br>User Data<br>Metrics)]
-
-G[Apache Kafka]
-
-H[Prometheus Monitoring]
-I[Grafana Dashboards]
-
-J[Kafka Consumers<br>Analytics<br>Billing<br>Audit Trail]
-
-A --> B
-B --> C
-
-C --> D
-C --> E
-
-E --> F
-E --> G
-
-G --> J
-G --> H
-
-H --> I
-```
+<p align="center">
+  <img src="docs/images/architecture.png" alt="System Architecture Diagram" width="700" />
+</p>
 
 ## Project Structure
 
