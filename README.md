@@ -3,6 +3,12 @@
 
 A production-grade, enterprise-scale **Multi-Tenant SaaS Gateway** built with **NestJS**, featuring advanced API management, real-time analytics, multi-tenancy isolation, and comprehensive compliance capabilities.
 
+## Architecture
+
+<p align="center">
+  <img src="docs/images/architecture.png" alt="System Architecture Diagram" width="700" />
+</p>
+
 ### Key Features
 
 ✅ **Multi-Tenancy** - Complete tenant isolation at all layers (database, cache, events)  
@@ -65,12 +71,6 @@ npm run build
 npm run start:prod       
 ```
 
-
-## Architecture
-
-<p align="center">
-  <img src="docs/images/architecture.png" alt="System Architecture Diagram" width="700" />
-</p>
 
 ## Services
 
