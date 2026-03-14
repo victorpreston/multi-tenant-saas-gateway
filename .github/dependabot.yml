@@ -1,72 +1,73 @@
 version: 2
+
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 10
+      interval: monthly
+      day: monday
+    open-pull-requests-limit: 3
+    target-branch: dev
+    versioning-strategy: increase-if-necessary
+    allow:
+      - dependency-type: direct
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
     reviewers:
-      - "victorpreston"
-    labels:
-      - "dependencies"
-      - "npm"
+      - victorpreston
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore"
       include: "scope"
-    versioning-strategy: "increase"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
 
-  - package-ecosystem: "docker"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore(docker)"
+      interval: monthly
+      day: monday
+    open-pull-requests-limit: 2
+    target-branch: dev
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          - "version-update:semver-major"
+    reviewers:
+      - victorpreston
+    commit-message:
+      prefix: "ci"
+      include: "scope"
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: docker
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "github-actions"
-    commit-message:
-      prefix: "chore(ci)"
+      interval: monthly
+      day: monday
+    open-pull-requests-limit: 1
+    target-branch: dev
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          - "version-update:semver-major"
+    reviewers:
+      - victorpreston
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
-  - package-ecosystem: "terraform"
-    directory: "/infrastructure"
+  - package-ecosystem: terraform
+    directory: /infrastructure
     schedule:
-      interval: "monthly"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "terraform"
-    commit-message:
-      prefix: "chore(terraform)"
+      interval: monthly
+      day: monday
+    open-pull-requests-limit: 1
+    target-branch: dev
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          - "version-update:semver-major"
+    reviewers:
+      - victorpreston
+    commit-message:
+      prefix: "chore"
+      include: "scope"
