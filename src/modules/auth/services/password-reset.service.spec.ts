@@ -82,6 +82,20 @@ describe('PasswordResetService', () => {
         { used: true },
       );
     });
+
+    it('sets token expiry to 60 minutes from now', async () => {
+      mockUserRepo.findOne.mockResolvedValue(makeUser());
+      const before = new Date(Date.now() + 59 * 60 * 1000);
+      const after = new Date(Date.now() + 61 * 60 * 1000);
+
+      await service.requestReset(dto);
+      const saveCalls = mockTokenRepo.save.mock.calls as Array<
+        [{ expiresAt: Date }]
+      >;
+      const savedToken = saveCalls[0][0];
+      expect(savedToken.expiresAt.getTime()).toBeGreaterThan(before.getTime());
+      expect(savedToken.expiresAt.getTime()).toBeLessThan(after.getTime());
+    });
   });
 
   describe('resetPassword', () => {
@@ -108,6 +122,17 @@ describe('PasswordResetService', () => {
       expect(mockTokenRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ used: true }),
       );
+    });
+
+    it('hashes the new password before saving', async () => {
+      const token = makeToken();
+      mockTokenRepo.findOne.mockResolvedValue(token);
+
+      await service.resetPassword(dto);
+      const userSaveCalls = mockUserRepo.save.mock.calls as Array<[User]>;
+      const savedUser = userSaveCalls[0][0];
+      expect(savedUser.passwordHash).not.toBe('newPassword123');
+      expect(savedUser.passwordHash).not.toBe('old-hash');
     });
   });
 });
