@@ -62,6 +62,17 @@ describe('AuditService', () => {
 
       await expect(service.log(dto)).resolves.toBeUndefined();
     });
+
+    it('defaults changes and metadata to empty objects when not provided', async () => {
+      const log = makeAuditLog();
+      mockRepo.create.mockReturnValue(log);
+      mockRepo.save.mockResolvedValue(log);
+
+      await service.log(dto);
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ changes: {}, metadata: {} }),
+      );
+    });
   });
 
   describe('query', () => {
@@ -108,6 +119,16 @@ describe('AuditService', () => {
       expect(mockRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ order: { createdAt: 'DESC' } }),
       );
+    });
+
+    it('filters by status when provided', async () => {
+      mockRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.query({ tenantId: 'tenant-id', status: 'FAILURE' });
+      const calls = mockRepo.findAndCount.mock.calls as Array<
+        [{ where: { status?: string } }]
+      >;
+      expect(calls[0][0].where).toMatchObject({ status: 'FAILURE' });
     });
   });
 });
