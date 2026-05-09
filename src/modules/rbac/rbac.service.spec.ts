@@ -84,6 +84,11 @@ describe('RbacService', () => {
     it('returns true when required list is empty', () => {
       expect(service.hasPermission([], [])).toBe(true);
     });
+
+    it('returns false when user has no permissions', () => {
+      const required = [{ resource: 'users', action: 'read' }];
+      expect(service.hasPermission([], required)).toBe(false);
+    });
   });
 
   describe('hasRole', () => {
@@ -93,6 +98,10 @@ describe('RbacService', () => {
 
     it('returns false when user has none of the required roles', () => {
       expect(service.hasRole(['viewer'], ['admin'])).toBe(false);
+    });
+
+    it('returns false when user has no roles', () => {
+      expect(service.hasRole([], ['admin'])).toBe(false);
     });
   });
 
@@ -131,6 +140,20 @@ describe('RbacService', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({ resource: 'users', action: 'read' });
     });
+
+    it('skips inactive permissions', async () => {
+      mockCache.get.mockResolvedValue(null);
+      const inactivePerm = makePermission({ isActive: false });
+      const user = {
+        id: 'user-id',
+        tenantId: 'tenant-id',
+        roles: [makeRole({ permissions: [inactivePerm] })],
+      };
+      mockUserRepo.findOne.mockResolvedValue(user);
+
+      const result = await service.getUserPermissions('user-id', 'tenant-id');
+      expect(result).toHaveLength(0);
+    });
   });
 
   describe('listRoles', () => {
@@ -139,6 +162,12 @@ describe('RbacService', () => {
       const result = await service.listRoles('tenant-id');
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('admin');
+    });
+
+    it('returns empty array when tenant has no roles', async () => {
+      mockRoleRepo.find.mockResolvedValue([]);
+      const result = await service.listRoles('tenant-id');
+      expect(result).toHaveLength(0);
     });
   });
 
