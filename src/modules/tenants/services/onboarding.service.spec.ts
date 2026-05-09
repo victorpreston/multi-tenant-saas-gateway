@@ -65,4 +65,38 @@ describe('OnboardingService', () => {
     >;
     expect(calls.every(([r]) => r.isSystem === true)).toBe(true);
   });
+
+  it('assigns member-scoped permissions to member role', async () => {
+    mockRoleRepo.find.mockResolvedValue([]);
+    const perms = [
+      makePermission('users', 'read'),
+      makePermission('api-keys', 'read'),
+      makePermission('api-keys', 'create'),
+    ];
+    mockPermRepo.find.mockResolvedValue(perms);
+
+    await service.initializeTenant('tenant-id');
+    const calls = mockRoleRepo.create.mock.calls as Array<
+      [{ name: string; permissions: unknown[] }]
+    >;
+    const memberCall = calls.find(([r]) => r.name === 'member');
+    expect(memberCall).toBeDefined();
+    expect(memberCall![0].permissions).toHaveLength(3);
+  });
+
+  it('gives admin role all permissions via wildcard', async () => {
+    mockRoleRepo.find.mockResolvedValue([]);
+    const perms = [
+      makePermission('users', 'read'),
+      makePermission('tenants', 'delete'),
+    ];
+    mockPermRepo.find.mockResolvedValue(perms);
+
+    await service.initializeTenant('tenant-id');
+    const calls = mockRoleRepo.create.mock.calls as Array<
+      [{ name: string; permissions: unknown[] }]
+    >;
+    const adminCall = calls.find(([r]) => r.name === 'admin');
+    expect(adminCall![0].permissions).toHaveLength(2);
+  });
 });
