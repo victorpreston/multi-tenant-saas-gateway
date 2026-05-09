@@ -9,6 +9,7 @@ import { ApiKeysModule } from './modules/api-keys';
 import { KafkaModule } from './modules/kafka/kafka.module';
 import { RedisModule } from './modules/redis';
 import { DatabaseModule } from './database/config';
+import { RbacModule } from './modules/rbac/rbac.module';
 import { configValidationSchema } from './config/validation';
 import { TenantMiddleware } from './middleware/tenant.middleware';
 import { AppController } from './app.controller';
@@ -42,6 +43,7 @@ import { AppService } from './app.service';
     KafkaModule,
     TenantsModule,
     UsersModule,
+    RbacModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -50,6 +52,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
-      .forRoutes('users', 'tenants', 'api-keys', 'auth');
+      .forRoutes('users', 'tenants', 'api-keys', 'auth', 'rbac');
   }
 }

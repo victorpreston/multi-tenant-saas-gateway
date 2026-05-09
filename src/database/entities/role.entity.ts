@@ -2,9 +2,9 @@ import {
   Entity,
   Column,
   ManyToOne,
+  ManyToMany,
   JoinColumn,
   Index,
-  ManyToMany,
   JoinTable,
 } from 'typeorm';
 import { BaseEntity } from './base.entity';
@@ -13,10 +13,6 @@ import { User } from './user.entity';
 import { Permission } from './permission.entity';
 import type { RoleMetadata } from '../types/index';
 
-/**
- * Role entity - RBAC for multi-tenant system
- * Each role is scoped to a tenant
- */
 @Entity('roles')
 @Index(['tenantId'])
 @Index(['tenantId', 'name'])
@@ -36,15 +32,14 @@ export class Role extends BaseEntity {
   @Column({ type: 'jsonb', default: {} })
   metadata: RoleMetadata;
 
-  // Relations
   @ManyToOne(() => Tenant, (tenant) => tenant.roles, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
-  @ManyToOne(() => User, (user) => user.roles, { nullable: true })
-  owner: User;
+  @ManyToMany(() => User, (user) => user.roles)
+  users: User[];
 
   @ManyToMany(() => Permission, (permission) => permission.roles, {
     cascade: true,
