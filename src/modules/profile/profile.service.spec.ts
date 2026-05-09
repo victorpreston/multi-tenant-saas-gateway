@@ -11,10 +11,10 @@ const makeUser = (overrides: Partial<User> = {}): User =>
     name: 'Test User',
     tenantId: 'tenant-id',
     status: UserStatus.ACTIVE,
-    emailVerified: false,
-    lastLoginAt: null,
+    emailVerified: true,
+    lastLoginAt: new Date('2026-01-10'),
     createdAt: new Date('2026-01-01'),
-    updatedAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-05'),
     ...overrides,
   }) as User;
 
@@ -45,7 +45,20 @@ describe('ProfileService', () => {
       mockRepo.findOne.mockResolvedValue(makeUser());
       const result = await service.getProfile('user-id', 'tenant-id');
       expect(result.email).toBe('user@example.com');
-      expect(result.emailVerified).toBe(false);
+      expect(result.emailVerified).toBe(true);
+    });
+
+    it('includes lastLoginAt in response', async () => {
+      const user = makeUser({ lastLoginAt: new Date('2026-01-10') });
+      mockRepo.findOne.mockResolvedValue(user);
+      const result = await service.getProfile('user-id', 'tenant-id');
+      expect(result.lastLoginAt).toEqual(user.lastLoginAt);
+    });
+
+    it('does not expose passwordHash', async () => {
+      mockRepo.findOne.mockResolvedValue(makeUser());
+      const result = await service.getProfile('user-id', 'tenant-id');
+      expect(result).not.toHaveProperty('passwordHash');
     });
   });
 
@@ -66,6 +79,15 @@ describe('ProfileService', () => {
         name: 'Updated',
       });
       expect(result.name).toBe('Updated');
+    });
+
+    it('does not change name when dto.name is not provided', async () => {
+      const user = makeUser({ name: 'Original' });
+      mockRepo.findOne.mockResolvedValue(user);
+      mockRepo.save.mockResolvedValue(user);
+
+      const result = await service.updateProfile('user-id', 'tenant-id', {});
+      expect(result.name).toBe('Original');
     });
   });
 });
