@@ -15,6 +15,7 @@ import { TenantStatus, TenantErrorCode } from '../enums';
 import { EventPublisherService } from '../../../common/services';
 import { CacheService } from '../../redis/cache.service';
 import { TenantCreatedEvent } from '../../../common/events/events';
+import { OnboardingService } from './onboarding.service';
 
 @Injectable()
 export class TenantService {
@@ -23,6 +24,7 @@ export class TenantService {
     private readonly tenantRepository: Repository<Tenant>,
     private readonly eventPublisher: EventPublisherService,
     private readonly cacheService: CacheService,
+    private readonly onboardingService: OnboardingService,
   ) {}
 
   async create(payload: CreateTenantPayload): Promise<TenantResponseDto> {
@@ -54,6 +56,9 @@ export class TenantService {
 
     // Invalidate tenant list cache
     await this.cacheService.del(this.cacheService.getTenantListKey());
+
+    // Kick off default role creation asynchronously (fire-and-forget)
+    this.onboardingService.initializeTenant(saved.id).catch(() => {});
 
     // Publish tenant created event
     const tenantCreatedPayload: TenantCreatedEvent = {
