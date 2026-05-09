@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User, Tenant } from '../../database/entities';
+import { PasswordResetToken } from '../../database/entities/password-reset-token.entity';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies';
 import {
@@ -12,12 +13,13 @@ import {
   RefreshTokenService,
   TokenGeneratorService,
   ChangePasswordService,
+  PasswordResetService,
 } from './services';
 import type { EnvironmentVariables } from '../../config/validation';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Tenant]),
+    TypeOrmModule.forFeature([User, Tenant, PasswordResetToken]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
@@ -36,6 +38,7 @@ import type { EnvironmentVariables } from '../../config/validation';
     RefreshTokenService,
     TokenGeneratorService,
     ChangePasswordService,
+    PasswordResetService,
     JwtStrategy,
   ],
   exports: [
