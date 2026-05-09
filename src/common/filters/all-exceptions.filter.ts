@@ -60,7 +60,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = (resp['message'] as string) || exception.message;
         details = resp['details'];
 
-        // Handle class-validator validation errors
         if (Array.isArray(resp['message'])) {
           code = 'VALIDATION_ERROR';
           message = 'Request validation failed';

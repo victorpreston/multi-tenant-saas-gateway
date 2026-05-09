@@ -9,7 +9,6 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  // Global validation pipe — strips unknown fields, enforces class-validator
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -19,13 +18,10 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter — consistent error shapes
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Global request/response logger with correlation IDs
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // Swagger / OpenAPI documentation
   const config = new DocumentBuilder()
     .setTitle('Multi-Tenant SaaS Gateway API')
     .setDescription(
