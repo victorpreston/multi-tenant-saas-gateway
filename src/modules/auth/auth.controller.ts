@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import {
@@ -19,12 +20,14 @@ import {
   RegisterDto,
   RefreshTokenDto,
   TokenResponseDto,
+  ChangePasswordDto,
 } from './dto';
 import {
   RegisterService,
   LoginService,
   RefreshTokenService,
   TokenGeneratorService,
+  ChangePasswordService,
 } from './services';
 
 @Controller('auth')
@@ -35,6 +38,7 @@ export class AuthController {
     private readonly loginService: LoginService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly tokenGeneratorService: TokenGeneratorService,
+    private readonly changePasswordService: ChangePasswordService,
   ) {}
 
   @Post('register')
@@ -108,5 +112,29 @@ export class AuthController {
     },
   ) {
     return req.user;
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Change password for the authenticated user' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Password updated',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Current password is incorrect',
+  })
+  async changePassword(
+    @Request() req: { user: { userId: string; tenantId: string } },
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.changePasswordService.execute(
+      req.user.userId,
+      req.user.tenantId,
+      dto,
+    );
   }
 }
