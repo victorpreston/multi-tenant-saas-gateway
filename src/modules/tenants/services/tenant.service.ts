@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import { Tenant } from '../../../database/entities/tenant.entity';
 import {
   CreateTenantPayload,
@@ -119,29 +119,35 @@ export class TenantService {
   async findAll(
     page = 1,
     limit = 20,
+    search?: string,
+    status?: string,
   ): Promise<{ data: TenantResponseDto[]; total: number }> {
     const safeLimit = Math.min(limit, 100);
     const skip = (page - 1) * safeLimit;
 
-    const cacheKey = `${this.cacheService.getTenantListKey()}:${page}:${safeLimit}`;
-    const cached = await this.cacheService.get<{
-      data: TenantResponseDto[];
-      total: number;
-    }>(cacheKey);
-    if (cached) return cached;
+    const where: FindOptionsWhere<Tenant>[] | FindOptionsWhere<Tenant> = search
+      ? [
+          {
+            name: ILike(`%${search}%`),
+            ...(status ? { status: status as Tenant['status'] } : {}),
+          },
+          {
+            slug: ILike(`%${search}%`),
+            ...(status ? { status: status as Tenant['status'] } : {}),
+          },
+        ]
+      : status
+        ? { status: status as Tenant['status'] }
+        : {};
 
     const [tenants, total] = await this.tenantRepository.findAndCount({
+      where,
       skip,
       take: safeLimit,
       order: { createdAt: 'DESC' },
     });
 
-    const response = {
-      data: tenants.map((t) => this.formatResponse(t)),
-      total,
-    };
-    await this.cacheService.set(cacheKey, response, 300);
-    return response;
+    return { data: tenants.map((t) => this.formatResponse(t)), total };
   }
 
   async update(
