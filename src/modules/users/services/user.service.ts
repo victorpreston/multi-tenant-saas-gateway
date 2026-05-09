@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +23,7 @@ import { UserCreatedEvent } from '../../../common/events/events';
 @Injectable()
 export class UserService {
   private readonly cacheTtlUser: number;
+  private readonly logger = new Logger(UserService.name);
 
   constructor(
     @InjectRepository(User)
@@ -100,7 +102,7 @@ export class UserService {
       this.eventPublisher.publishUserCreated(userCreatedPayload);
     } catch (error) {
       // Log but don't fail the request if event publishing fails
-      console.error('Failed to publish user created event:', error);
+      this.logger.warn(`Failed to publish user created event: ${error}`);
     }
 
     return this.formatResponse(saved);
@@ -219,7 +221,7 @@ export class UserService {
       });
     } catch (error) {
       // Log but don't fail the request
-      console.error('Failed to publish user updated event:', error);
+      this.logger.warn(`Failed to publish user updated event: ${error}`);
     }
 
     return this.formatResponse(updated);
@@ -246,7 +248,7 @@ export class UserService {
       });
     } catch (error) {
       // Log but continue with deletion
-      console.error('Failed to publish user deleted event:', error);
+      this.logger.warn(`Failed to publish user deleted event: ${error}`);
     }
 
     // Invalidate user caches after event published
