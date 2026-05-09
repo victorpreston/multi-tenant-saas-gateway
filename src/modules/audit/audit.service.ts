@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, FindManyOptions } from 'typeorm';
+import { Repository, Between, FindManyOptions, DeepPartial } from 'typeorm';
 import { AuditLog } from '../../database/entities/audit-log.entity';
 
 export interface CreateAuditLogDto {
@@ -52,7 +52,7 @@ export class AuditService {
         ipAddress: dto.ipAddress,
         userAgent: dto.userAgent,
         metadata: dto.metadata ?? {},
-      });
+      } as DeepPartial<AuditLog>);
       await this.auditLogRepository.save(entry);
     } catch (err) {
       this.logger.warn(`Audit log write failed: ${String(err)}`);
