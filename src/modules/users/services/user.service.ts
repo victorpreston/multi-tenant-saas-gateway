@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../../database/entities/user.entity';
 import { Tenant } from '../../../database/entities/tenant.entity';
@@ -161,27 +161,35 @@ export class UserService {
     tenantId: string,
     page = 1,
     limit = 20,
+    search?: string,
+    status?: string,
   ): Promise<{ data: UserResponseDto[]; total: number }> {
     const safeLimit = Math.min(limit, 100);
     const skip = (page - 1) * safeLimit;
 
-    const cacheKey = `${this.cacheService.getUserListKey(tenantId)}:${page}:${safeLimit}`;
-    const cached = await this.cacheService.get<{
-      data: UserResponseDto[];
-      total: number;
-    }>(cacheKey);
-    if (cached) return cached;
+    const where: FindOptionsWhere<User>[] | FindOptionsWhere<User> = search
+      ? [
+          {
+            tenantId,
+            email: ILike(`%${search}%`),
+            ...(status ? { status: status as User['status'] } : {}),
+          },
+          {
+            tenantId,
+            name: ILike(`%${search}%`),
+            ...(status ? { status: status as User['status'] } : {}),
+          },
+        ]
+      : { tenantId, ...(status ? { status: status as User['status'] } : {}) };
 
     const [users, total] = await this.userRepository.findAndCount({
-      where: { tenantId },
+      where,
       skip,
       take: safeLimit,
       order: { createdAt: 'DESC' },
     });
 
-    const response = { data: users.map((u) => this.formatResponse(u)), total };
-    await this.cacheService.set(cacheKey, response, this.cacheTtlUser);
-    return response;
+    return { data: users.map((u) => this.formatResponse(u)), total };
   }
 
   async update(
