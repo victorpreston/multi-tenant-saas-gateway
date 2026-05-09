@@ -45,6 +45,9 @@ export const configValidationSchema = Joi.object({
   PROMETHEUS_ENABLED: Joi.boolean().default(true),
   PROMETHEUS_PORT: Joi.number().default(9090),
 
+  // CORS
+  CORS_ORIGINS: Joi.string().default('http://localhost:3000'),
+
   // AWS
   AWS_REGION: Joi.string().optional(),
   AWS_ACCESS_KEY_ID: Joi.string().optional(),
@@ -84,6 +87,8 @@ export type EnvironmentVariables = {
 
   PROMETHEUS_ENABLED: boolean;
   PROMETHEUS_PORT: number;
+
+  CORS_ORIGINS: string;
 
   AWS_REGION?: string;
   AWS_ACCESS_KEY_ID?: string;

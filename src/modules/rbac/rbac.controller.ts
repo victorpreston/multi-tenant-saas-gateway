@@ -21,7 +21,7 @@ import { RbacGuard } from './rbac.guard';
 import { RbacService } from './rbac.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/auth.interface';
+import type { AuthenticatedUser } from '../auth/interfaces/auth.interface';
 import { CreateRoleDto, AssignRoleDto } from './dto';
 
 @ApiTags('rbac')
