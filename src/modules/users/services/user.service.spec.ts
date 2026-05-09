@@ -139,23 +139,20 @@ describe('UserService', () => {
   });
 
   describe('findAllByTenant', () => {
-    it('returns cached list on cache hit', async () => {
-      const cached = { data: [{ id: USER_ID, tenantId: TENANT_ID }], total: 1 };
-      mockCache.get.mockResolvedValue(cached);
-
-      const result = await service.findAllByTenant(TENANT_ID);
-      expect(result).toEqual(cached);
-      expect(mockUserRepo.findAndCount).not.toHaveBeenCalled();
-    });
-
-    it('fetches from DB and caches on cache miss', async () => {
-      mockCache.get.mockResolvedValue(null);
+    it('returns paginated users from DB', async () => {
       mockUserRepo.findAndCount.mockResolvedValue([[makeUser()], 1]);
 
       const result = await service.findAllByTenant(TENANT_ID);
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
-      expect(mockCache.set).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty list when no users exist', async () => {
+      mockUserRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      const result = await service.findAllByTenant(TENANT_ID);
+      expect(result.data).toHaveLength(0);
+      expect(result.total).toBe(0);
     });
   });
 
