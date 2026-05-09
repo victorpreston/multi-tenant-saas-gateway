@@ -16,7 +16,7 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { JwtGuard } from '../auth/guards/jwt.guard';
 import { RbacGuard } from './rbac.guard';
 import { RbacService } from './rbac.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -26,7 +26,7 @@ import { CreateRoleDto, AssignRoleDto } from './dto';
 
 @ApiTags('rbac')
 @ApiBearerAuth('JWT')
-@UseGuards(JwtAuthGuard, RbacGuard)
+@UseGuards(JwtGuard, RbacGuard)
 @Controller('rbac')
 export class RbacController {
   constructor(private readonly rbacService: RbacService) {}
