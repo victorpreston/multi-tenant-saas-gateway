@@ -9,7 +9,7 @@ import { JwtGuard } from '../auth/guards/jwt.guard';
 import { RbacGuard } from '../rbac/rbac.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/auth.interface';
+import type { AuthenticatedUser } from '../auth/interfaces/auth.interface';
 import { AuditService } from './audit.service';
 
 @ApiTags('audit-logs')

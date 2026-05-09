@@ -11,6 +11,7 @@ import {
   LoginService,
   RefreshTokenService,
   TokenGeneratorService,
+  ChangePasswordService,
 } from './services';
 import type { EnvironmentVariables } from '../../config/validation';
 
@@ -34,6 +35,7 @@ import type { EnvironmentVariables } from '../../config/validation';
     LoginService,
     RefreshTokenService,
     TokenGeneratorService,
+    ChangePasswordService,
     JwtStrategy,
   ],
   exports: [

@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters';
 import { LoggingInterceptor } from './common/interceptors';
@@ -9,7 +11,29 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  // Global validation pipe — strips unknown fields, enforces class-validator
+  app.use(helmet());
+  app.use(compression());
+
+  const rawOrigins = process.env.CORS_ORIGINS ?? 'http://localhost:3000';
+  const corsOrigins = rawOrigins.split(',').map((o) => o.trim());
+  app.enableCors({
+    origin: corsOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-api-key',
+      'x-tenant-id',
+      'x-request-id',
+    ],
+    exposedHeaders: ['x-request-id'],
+    credentials: true,
+    maxAge: 86400,
+  });
+
+  app.setGlobalPrefix('api');
+  app.enableShutdownHooks();
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -19,13 +43,9 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter — consistent error shapes
   app.useGlobalFilters(new AllExceptionsFilter());
-
-  // Global request/response logger with correlation IDs
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // Swagger / OpenAPI documentation
   const config = new DocumentBuilder()
     .setTitle('Multi-Tenant SaaS Gateway API')
     .setDescription(
@@ -49,6 +69,8 @@ async function bootstrap() {
     .addTag('tenants', 'Tenant management')
     .addTag('users', 'User management (tenant-scoped)')
     .addTag('api-keys', 'API key management')
+    .addTag('rbac', 'Role-based access control')
+    .addTag('audit-logs', 'Audit log queries')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -59,6 +81,6 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
   logger.log(`Application running on port ${port}`);
-  logger.log(`API docs available at http://localhost:${port}/api/docs`);
+  logger.log(`Swagger UI at http://localhost:${port}/api/docs`);
 }
 void bootstrap();
