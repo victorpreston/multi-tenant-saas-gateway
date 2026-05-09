@@ -11,6 +11,7 @@ import { RedisModule } from './modules/redis';
 import { DatabaseModule } from './database/config';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { WebhookModule } from './modules/webhooks/webhook.module';
 import { configValidationSchema } from './config/validation';
 import { TenantMiddleware } from './middleware/tenant.middleware';
 import { AppController } from './app.controller';
@@ -46,6 +47,7 @@ import { AppService } from './app.service';
     UsersModule,
     RbacModule,
     AuditModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -54,6 +56,15 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
-      .forRoutes('users', 'tenants', 'api-keys', 'auth', 'rbac', 'audit-logs');
+      .forRoutes(
+        'users',
+        'tenants',
+        'api-keys',
+        'auth',
+        'rbac',
+        'audit-logs',
+        'webhooks',
+        'profile',
+      );
   }
 }
