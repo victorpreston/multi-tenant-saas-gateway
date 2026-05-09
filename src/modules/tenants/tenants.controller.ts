@@ -28,6 +28,7 @@ import {
   PaginationQueryDto,
   PaginatedResponseDto,
 } from '../../common/dto/pagination.dto';
+import { TenantFilterDto } from '../../common/dto/search.dto';
 
 @ApiTags('tenants')
 @ApiBearerAuth('JWT')
@@ -46,15 +47,24 @@ export class TenantController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all tenants (paginated)' })
+  @ApiOperation({ summary: 'List all tenants (paginated, searchable)' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  @ApiQuery({ name: 'q', required: false, type: String, example: 'acme' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'ARCHIVED'],
+  })
   async findAll(
     @Query() pagination: PaginationQueryDto,
+    @Query() filter: TenantFilterDto,
   ): Promise<PaginatedResponseDto<TenantResponseDto>> {
     const { data, total } = await this.tenantService.findAll(
       pagination.page,
       pagination.limit,
+      filter.q,
+      filter.status,
     );
     return new PaginatedResponseDto(
       data,

@@ -21,6 +21,8 @@ import {
   RefreshTokenDto,
   TokenResponseDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
 } from './dto';
 import {
   RegisterService,
@@ -28,6 +30,7 @@ import {
   RefreshTokenService,
   TokenGeneratorService,
   ChangePasswordService,
+  PasswordResetService,
 } from './services';
 
 @Controller('auth')
@@ -39,6 +42,7 @@ export class AuthController {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly tokenGeneratorService: TokenGeneratorService,
     private readonly changePasswordService: ChangePasswordService,
+    private readonly passwordResetService: PasswordResetService,
   ) {}
 
   @Post('register')
@@ -112,6 +116,34 @@ export class AuthController {
     },
   ) {
     return req.user;
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request a password reset link (token simulated)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Reset email dispatched (if user exists)',
+  })
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    return this.passwordResetService.requestReset(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Reset password using a valid reset token' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Password reset successful',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid or expired token',
+  })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    await this.passwordResetService.resetPassword(dto);
   }
 
   @Post('change-password')

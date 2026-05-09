@@ -59,6 +59,7 @@ jobs:
   container-scan:
     name: Container Image Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: github.event_name == 'push'
 
     steps:

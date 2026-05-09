@@ -10,6 +10,7 @@ jobs:
   lint-and-build:
     name: Lint, Format & Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       matrix:
@@ -43,6 +44,7 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       matrix:

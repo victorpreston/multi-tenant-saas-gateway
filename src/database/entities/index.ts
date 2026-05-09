@@ -5,3 +5,5 @@ export * from './role.entity';
 export * from './permission.entity';
 export * from './api-key.entity';
 export * from './audit-log.entity';
+export * from './webhook.entity';
+export * from './password-reset-token.entity';

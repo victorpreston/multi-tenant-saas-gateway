@@ -1,6 +1,15 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { EnvironmentVariables } from '../../config/validation';
-import { Tenant, User, Role, Permission, ApiKey, AuditLog } from '../entities';
+import {
+  Tenant,
+  User,
+  Role,
+  Permission,
+  ApiKey,
+  AuditLog,
+  Webhook,
+} from '../entities';
+import { PasswordResetToken } from '../entities/password-reset-token.entity';
 
 /**
  * Create TypeORM DataSourceOptions from environment variables
@@ -16,7 +25,16 @@ export function getTypeOrmConfig(env: EnvironmentVariables): DataSourceOptions {
     password: env.DATABASE_PASSWORD,
     database: env.DATABASE_NAME,
     ssl: env.DATABASE_SSL ? { rejectUnauthorized: false } : false,
-    entities: [Tenant, User, Role, Permission, ApiKey, AuditLog],
+    entities: [
+      Tenant,
+      User,
+      Role,
+      Permission,
+      ApiKey,
+      AuditLog,
+      Webhook,
+      PasswordResetToken,
+    ],
     migrations: ['src/database/migrations/*.ts'],
     subscribers: [],
     synchronize: isDevelopment, // Only in development
@@ -38,7 +56,16 @@ export const dataSource = new DataSource({
   database: process.env.DATABASE_NAME || 'saas_gateway_db',
   ssl:
     process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  entities: [Tenant, User, Role, Permission, ApiKey, AuditLog],
+  entities: [
+    Tenant,
+    User,
+    Role,
+    Permission,
+    ApiKey,
+    AuditLog,
+    Webhook,
+    PasswordResetToken,
+  ],
   migrations: ['src/database/migrations/*.ts'],
   subscribers: [],
   synchronize: false,
