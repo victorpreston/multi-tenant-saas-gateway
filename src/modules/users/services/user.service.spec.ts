@@ -32,6 +32,7 @@ describe('UserService', () => {
   const mockUserRepo = {
     findOne: jest.fn(),
     find: jest.fn(),
+    findAndCount: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     remove: jest.fn(),
@@ -139,20 +140,21 @@ describe('UserService', () => {
 
   describe('findAllByTenant', () => {
     it('returns cached list on cache hit', async () => {
-      const cached = [{ id: USER_ID, tenantId: TENANT_ID }];
+      const cached = { data: [{ id: USER_ID, tenantId: TENANT_ID }], total: 1 };
       mockCache.get.mockResolvedValue(cached);
 
       const result = await service.findAllByTenant(TENANT_ID);
       expect(result).toEqual(cached);
-      expect(mockUserRepo.find).not.toHaveBeenCalled();
+      expect(mockUserRepo.findAndCount).not.toHaveBeenCalled();
     });
 
     it('fetches from DB and caches on cache miss', async () => {
       mockCache.get.mockResolvedValue(null);
-      mockUserRepo.find.mockResolvedValue([makeUser()]);
+      mockUserRepo.findAndCount.mockResolvedValue([[makeUser()], 1]);
 
       const result = await service.findAllByTenant(TENANT_ID);
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
       expect(mockCache.set).toHaveBeenCalledTimes(1);
     });
   });
