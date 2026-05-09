@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
   UseInterceptors,
   Request,
@@ -19,6 +20,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { UserService } from './services';
@@ -27,6 +29,10 @@ import { UserResponseDto } from './interfaces';
 import type { TenantRequest } from '../../middleware/tenant.middleware';
 import { AuditInterceptor } from '../audit/audit.interceptor';
 import { Audit } from '../../common/decorators/audit.decorator';
+import {
+  PaginationQueryDto,
+  PaginatedResponseDto,
+} from '../../common/dto/pagination.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT')
@@ -57,10 +63,25 @@ export class UserController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all users in the current tenant' })
-  async findAll(@Request() req: TenantRequest): Promise<UserResponseDto[]> {
+  @ApiOperation({ summary: 'List users in the current tenant (paginated)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  async findAll(
+    @Request() req: TenantRequest,
+    @Query() pagination: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<UserResponseDto>> {
     const tenantId = this.getTenantId(req);
-    return this.userService.findAllByTenant(tenantId);
+    const { data, total } = await this.userService.findAllByTenant(
+      tenantId,
+      pagination.page,
+      pagination.limit,
+    );
+    return new PaginatedResponseDto(
+      data,
+      total,
+      pagination.page,
+      pagination.limit,
+    );
   }
 
   @Get(':id')

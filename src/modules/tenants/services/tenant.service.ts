@@ -111,26 +111,31 @@ export class TenantService {
     return this.formatResponse(tenant);
   }
 
-  async findAll(): Promise<TenantResponseDto[]> {
-    // Try to get from cache first
-    const cached = await this.cacheService.get<TenantResponseDto[]>(
-      this.cacheService.getTenantListKey(),
-    );
+  async findAll(
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: TenantResponseDto[]; total: number }> {
+    const safeLimit = Math.min(limit, 100);
+    const skip = (page - 1) * safeLimit;
 
-    if (cached) {
-      return cached;
-    }
+    const cacheKey = `${this.cacheService.getTenantListKey()}:${page}:${safeLimit}`;
+    const cached = await this.cacheService.get<{
+      data: TenantResponseDto[];
+      total: number;
+    }>(cacheKey);
+    if (cached) return cached;
 
-    const tenants = await this.tenantRepository.find();
-    const response = tenants.map((tenant) => this.formatResponse(tenant));
+    const [tenants, total] = await this.tenantRepository.findAndCount({
+      skip,
+      take: safeLimit,
+      order: { createdAt: 'DESC' },
+    });
 
-    // Cache the tenant list
-    await this.cacheService.set(
-      this.cacheService.getTenantListKey(),
-      response,
-      300, // 5 minutes TTL
-    );
-
+    const response = {
+      data: tenants.map((t) => this.formatResponse(t)),
+      total,
+    };
+    await this.cacheService.set(cacheKey, response, 300);
     return response;
   }
 

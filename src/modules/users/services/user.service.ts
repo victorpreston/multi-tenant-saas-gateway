@@ -157,29 +157,30 @@ export class UserService {
     return this.formatResponse(user);
   }
 
-  async findAllByTenant(tenantId: string): Promise<UserResponseDto[]> {
-    // Try to get from cache first
-    const cached = await this.cacheService.get<UserResponseDto[]>(
-      this.cacheService.getUserListKey(tenantId),
-    );
+  async findAllByTenant(
+    tenantId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: UserResponseDto[]; total: number }> {
+    const safeLimit = Math.min(limit, 100);
+    const skip = (page - 1) * safeLimit;
 
-    if (cached) {
-      return cached;
-    }
+    const cacheKey = `${this.cacheService.getUserListKey(tenantId)}:${page}:${safeLimit}`;
+    const cached = await this.cacheService.get<{
+      data: UserResponseDto[];
+      total: number;
+    }>(cacheKey);
+    if (cached) return cached;
 
-    const users = await this.userRepository.find({
+    const [users, total] = await this.userRepository.findAndCount({
       where: { tenantId },
+      skip,
+      take: safeLimit,
+      order: { createdAt: 'DESC' },
     });
 
-    const response = users.map((user) => this.formatResponse(user));
-
-    // Cache the user list
-    await this.cacheService.set(
-      this.cacheService.getUserListKey(tenantId),
-      response,
-      this.cacheTtlUser,
-    );
-
+    const response = { data: users.map((u) => this.formatResponse(u)), total };
+    await this.cacheService.set(cacheKey, response, this.cacheTtlUser);
     return response;
   }
 
