@@ -71,6 +71,8 @@ async function bootstrap() {
     .addTag('api-keys', 'API key management')
     .addTag('rbac', 'Role-based access control')
     .addTag('audit-logs', 'Audit log queries')
+    .addTag('webhooks', 'Webhook endpoint management')
+    .addTag('profile', 'Authenticated user profile')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
