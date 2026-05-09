@@ -62,6 +62,21 @@ describe('WebhookService', () => {
         expect.objectContaining({ tenantId: 'tenant-id', url: dto.url }),
       );
     });
+
+    it('defaults maxRetries to 3 when not provided', async () => {
+      const dto = {
+        url: 'https://example.com/hook',
+        events: [WebhookEvent.USER_CREATED],
+      };
+      const webhook = makeWebhook();
+      mockRepo.create.mockReturnValue(webhook);
+      mockRepo.save.mockResolvedValue(webhook);
+
+      await service.create('tenant-id', dto);
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ maxRetries: 3 }),
+      );
+    });
   });
 
   describe('findAll', () => {
@@ -70,6 +85,12 @@ describe('WebhookService', () => {
       const result = await service.findAll('tenant-id');
       expect(result).toHaveLength(1);
       expect(result[0].tenantId).toBe('tenant-id');
+    });
+
+    it('returns empty array when no webhooks exist', async () => {
+      mockRepo.find.mockResolvedValue([]);
+      const result = await service.findAll('tenant-id');
+      expect(result).toHaveLength(0);
     });
   });
 
