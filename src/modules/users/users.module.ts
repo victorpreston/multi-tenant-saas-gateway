@@ -6,9 +6,15 @@ import { UserService } from './services';
 import { UserController } from './users.controller';
 import { KafkaModule } from '../kafka/kafka.module';
 import { RedisModule } from '../redis';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Tenant]), KafkaModule, RedisModule],
+  imports: [
+    TypeOrmModule.forFeature([User, Tenant]),
+    KafkaModule,
+    RedisModule,
+    AuditModule,
+  ],
   providers: [UserService],
   controllers: [UserController],
   exports: [UserService],
