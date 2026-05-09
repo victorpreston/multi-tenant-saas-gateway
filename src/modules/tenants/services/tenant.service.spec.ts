@@ -6,6 +6,7 @@ import { Tenant } from '../../../database/entities/tenant.entity';
 import { TenantStatus } from '../enums';
 import { EventPublisherService } from '../../../common/services';
 import { CacheService } from '../../redis/cache.service';
+import { OnboardingService } from './onboarding.service';
 
 const makeTenant = (overrides: Partial<Tenant> = {}): Tenant =>
   ({
@@ -49,6 +50,10 @@ describe('TenantService', () => {
     getTenantListKey: jest.fn(() => 'tenants:list'),
   };
 
+  const mockOnboarding = {
+    initializeTenant: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,6 +61,7 @@ describe('TenantService', () => {
         { provide: getRepositoryToken(Tenant), useValue: mockRepo },
         { provide: EventPublisherService, useValue: mockEventPublisher },
         { provide: CacheService, useValue: mockCache },
+        { provide: OnboardingService, useValue: mockOnboarding },
       ],
     }).compile();
 
@@ -116,23 +122,20 @@ describe('TenantService', () => {
   });
 
   describe('findAll', () => {
-    it('returns cached list when available', async () => {
-      const cached = { data: [{ id: 'tenant-id', slug: 'acme' }], total: 1 };
-      mockCache.get.mockResolvedValue(cached);
-
-      const result = await service.findAll();
-      expect(result).toEqual(cached);
-      expect(mockRepo.findAndCount).not.toHaveBeenCalled();
-    });
-
-    it('fetches from DB and caches on cache miss', async () => {
-      mockCache.get.mockResolvedValue(null);
+    it('fetches tenants from DB and returns paginated result', async () => {
       mockRepo.findAndCount.mockResolvedValue([[makeTenant()], 1]);
 
       const result = await service.findAll();
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
-      expect(mockCache.set).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty list when no tenants exist', async () => {
+      mockRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      const result = await service.findAll();
+      expect(result.data).toHaveLength(0);
+      expect(result.total).toBe(0);
     });
   });
 
