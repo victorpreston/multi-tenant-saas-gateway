@@ -6,18 +6,40 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
+  UseInterceptors,
   Request,
   BadRequestException,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { UserService } from './services';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { UserResponseDto } from './interfaces';
 import type { TenantRequest } from '../../middleware/tenant.middleware';
+import { AuditInterceptor } from '../audit/audit.interceptor';
+import { Audit } from '../../common/decorators/audit.decorator';
+import {
+  PaginationQueryDto,
+  PaginatedResponseDto,
+} from '../../common/dto/pagination.dto';
+import { UserFilterDto } from '../../common/dto/search.dto';
 
-@Controller('users')
+@ApiTags('users')
+@ApiBearerAuth('JWT')
 @UseGuards(JwtGuard)
+@UseInterceptors(AuditInterceptor)
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -31,6 +53,8 @@ export class UserController {
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a user in the current tenant' })
+  @Audit('user.create', 'users')
   async create(
     @Request() req: TenantRequest,
     @Body() createUserDto: CreateUserDto,
@@ -40,24 +64,56 @@ export class UserController {
   }
 
   @Get()
-  async findAll(@Request() req: TenantRequest): Promise<UserResponseDto[]> {
+  @ApiOperation({
+    summary: 'List users in the current tenant (paginated, searchable)',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  @ApiQuery({ name: 'q', required: false, type: String, example: 'john' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['ACTIVE', 'INACTIVE', 'PENDING', 'ARCHIVED'],
+  })
+  async findAll(
+    @Request() req: TenantRequest,
+    @Query() pagination: PaginationQueryDto,
+    @Query() filter: UserFilterDto,
+  ): Promise<PaginatedResponseDto<UserResponseDto>> {
     const tenantId = this.getTenantId(req);
-    return this.userService.findAllByTenant(tenantId);
+    const { data, total } = await this.userService.findAllByTenant(
+      tenantId,
+      pagination.page,
+      pagination.limit,
+      filter.q,
+      filter.status,
+    );
+    return new PaginatedResponseDto(
+      data,
+      total,
+      pagination.page,
+      pagination.limit,
+    );
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   async findById(
     @Request() req: TenantRequest,
-    @Param('id') userId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
   ): Promise<UserResponseDto> {
     const tenantId = this.getTenantId(req);
     return this.userService.findById(tenantId, userId);
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Update a user' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @Audit('user.update', 'users')
   async update(
     @Request() req: TenantRequest,
-    @Param('id') userId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     const tenantId = this.getTenantId(req);
@@ -65,12 +121,15 @@ export class UserController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a user' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Audit('user.delete', 'users')
   async delete(
     @Request() req: TenantRequest,
-    @Param('id') userId: string,
-  ): Promise<{ message: string }> {
+    @Param('id', ParseUUIDPipe) userId: string,
+  ): Promise<void> {
     const tenantId = this.getTenantId(req);
     await this.userService.delete(tenantId, userId);
-    return { message: 'User deleted successfully' };
   }
 }
