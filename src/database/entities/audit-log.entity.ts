@@ -3,10 +3,6 @@ import { BaseEntity } from './base.entity';
 import { Tenant } from './tenant.entity';
 import type { AuditLogChanges, AuditLogMetadata } from '../types/index';
 
-/**
- * AuditLog entity - Compliance and audit trail
- * Immutable record of all important system events
- */
 @Entity('audit_logs')
 @Index(['tenantId'])
 @Index(['userId'])
@@ -46,7 +42,6 @@ export class AuditLog extends BaseEntity {
   @Column({ type: 'jsonb', default: {} })
   metadata: AuditLogMetadata;
 
-  // Relations
   @ManyToOne(
     () => Tenant,
     (tenant: Tenant): AuditLog[] | undefined => tenant.auditLogs,

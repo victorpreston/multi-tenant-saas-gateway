@@ -2,8 +2,9 @@ import {
   Entity,
   Column,
   ManyToOne,
-  OneToMany,
+  ManyToMany,
   JoinColumn,
+  JoinTable,
   Index,
   Unique,
 } from 'typeorm';
@@ -19,10 +20,6 @@ export enum UserStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
-/**
- * User entity - Represents a user within a tenant
- * Always scoped to a tenant via tenantId
- */
 @Entity('users')
 @Index(['tenantId'])
 @Index(['email'])
@@ -60,13 +57,17 @@ export class User extends BaseEntity {
   @Column({ type: 'jsonb', default: {} })
   metadata: UserMetadata;
 
-  // Relations
   @ManyToOne(() => Tenant, (tenant) => tenant.users, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
-  @OneToMany(() => Role, (role) => role.owner, { nullable: true })
+  @ManyToMany(() => Role, (role) => role.users, { cascade: false })
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'userId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'roleId', referencedColumnName: 'id' },
+  })
   roles: Role[];
 }

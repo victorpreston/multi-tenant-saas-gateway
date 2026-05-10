@@ -4,10 +4,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { EnvironmentVariables } from '../../../config/validation';
 
-/**
- * JWT Strategy for Passport
- * Extracts and validates JWT tokens from Authorization headers
- */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService<EnvironmentVariables>) {
@@ -19,10 +15,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  /**
-   * Validate JWT payload and extract user data
-   * Called automatically when JWT is verified
-   */
   validate(payload: {
     sub: string;
     email: string;

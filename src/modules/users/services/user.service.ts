@@ -2,10 +2,11 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../../database/entities/user.entity';
 import { Tenant } from '../../../database/entities/tenant.entity';
@@ -22,6 +23,7 @@ import { UserCreatedEvent } from '../../../common/events/events';
 @Injectable()
 export class UserService {
   private readonly cacheTtlUser: number;
+  private readonly logger = new Logger(UserService.name);
 
   constructor(
     @InjectRepository(User)
@@ -100,7 +102,7 @@ export class UserService {
       this.eventPublisher.publishUserCreated(userCreatedPayload);
     } catch (error) {
       // Log but don't fail the request if event publishing fails
-      console.error('Failed to publish user created event:', error);
+      this.logger.warn(`Failed to publish user created event: ${error}`);
     }
 
     return this.formatResponse(saved);
@@ -155,30 +157,39 @@ export class UserService {
     return this.formatResponse(user);
   }
 
-  async findAllByTenant(tenantId: string): Promise<UserResponseDto[]> {
-    // Try to get from cache first
-    const cached = await this.cacheService.get<UserResponseDto[]>(
-      this.cacheService.getUserListKey(tenantId),
-    );
+  async findAllByTenant(
+    tenantId: string,
+    page = 1,
+    limit = 20,
+    search?: string,
+    status?: string,
+  ): Promise<{ data: UserResponseDto[]; total: number }> {
+    const safeLimit = Math.min(limit, 100);
+    const skip = (page - 1) * safeLimit;
 
-    if (cached) {
-      return cached;
-    }
+    const where: FindOptionsWhere<User>[] | FindOptionsWhere<User> = search
+      ? [
+          {
+            tenantId,
+            email: ILike(`%${search}%`),
+            ...(status ? { status: status as User['status'] } : {}),
+          },
+          {
+            tenantId,
+            name: ILike(`%${search}%`),
+            ...(status ? { status: status as User['status'] } : {}),
+          },
+        ]
+      : { tenantId, ...(status ? { status: status as User['status'] } : {}) };
 
-    const users = await this.userRepository.find({
-      where: { tenantId },
+    const [users, total] = await this.userRepository.findAndCount({
+      where,
+      skip,
+      take: safeLimit,
+      order: { createdAt: 'DESC' },
     });
 
-    const response = users.map((user) => this.formatResponse(user));
-
-    // Cache the user list
-    await this.cacheService.set(
-      this.cacheService.getUserListKey(tenantId),
-      response,
-      this.cacheTtlUser,
-    );
-
-    return response;
+    return { data: users.map((u) => this.formatResponse(u)), total };
   }
 
   async update(
@@ -219,7 +230,7 @@ export class UserService {
       });
     } catch (error) {
       // Log but don't fail the request
-      console.error('Failed to publish user updated event:', error);
+      this.logger.warn(`Failed to publish user updated event: ${error}`);
     }
 
     return this.formatResponse(updated);
@@ -246,7 +257,7 @@ export class UserService {
       });
     } catch (error) {
       // Log but continue with deletion
-      console.error('Failed to publish user deleted event:', error);
+      this.logger.warn(`Failed to publish user deleted event: ${error}`);
     }
 
     // Invalidate user caches after event published

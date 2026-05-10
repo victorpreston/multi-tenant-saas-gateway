@@ -1,44 +1,77 @@
 import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 export interface HealthResponse {
   status: 'ok' | 'error';
-  info: Record<string, any>;
-  error: Record<string, any>;
-  details: Record<string, any>;
+  info: Record<string, unknown>;
+  error: Record<string, unknown>;
+  details: Record<string, unknown>;
 }
 
 @Injectable()
 export class HealthService {
-  getHealthStatus(): HealthResponse {
-    const healthInfo = {
+  constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+  ) {}
+
+  async getHealthStatus(): Promise<HealthResponse> {
+    const dbStatus = await this.checkDatabase();
+
+    const info: Record<string, unknown> = {
       'api-gateway': {
         status: 'up',
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
       },
+      database: dbStatus,
     };
 
+    const hasError = dbStatus.status === 'down';
+
     return {
-      status: 'ok',
-      info: healthInfo,
-      error: {},
-      details: healthInfo,
+      status: hasError ? 'error' : 'ok',
+      info,
+      error: hasError ? { database: dbStatus } : {},
+      details: info,
     };
   }
 
-  getReadyStatus(): HealthResponse {
-    const readyInfo = {
+  async getReadyStatus(): Promise<HealthResponse> {
+    const dbStatus = await this.checkDatabase();
+    const isReady = dbStatus.status === 'up';
+
+    const info: Record<string, unknown> = {
       'api-gateway': {
-        status: 'ready',
+        status: isReady ? 'ready' : 'not-ready',
         timestamp: new Date().toISOString(),
       },
+      database: dbStatus,
     };
 
     return {
-      status: 'ok',
-      info: readyInfo,
-      error: {},
-      details: readyInfo,
+      status: isReady ? 'ok' : 'error',
+      info,
+      error: isReady ? {} : { database: dbStatus },
+      details: info,
     };
+  }
+
+  private async checkDatabase(): Promise<{
+    status: 'up' | 'down';
+    responseTime?: number;
+    message?: string;
+  }> {
+    const start = Date.now();
+    try {
+      await this.dataSource.query('SELECT 1');
+      return { status: 'up', responseTime: Date.now() - start };
+    } catch (err) {
+      return {
+        status: 'down',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      };
+    }
   }
 }

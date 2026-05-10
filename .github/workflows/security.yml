@@ -2,16 +2,17 @@ name: Security Scan
 
 on:
   pull_request:
-    branches: [master, develop]
+    branches: [master, dev]
   push:
-    branches: [master, develop]
+    branches: [master, dev]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: '0 0 * * 0' # Weekly on Sunday
 
 jobs:
   dependency-check:
     name: Dependency Vulnerabilities
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -27,5 +28,16 @@ jobs:
         run: npm ci
 
       - name: Audit dependencies
-        run: npm audit --audit-level=moderate
+        run: npm audit --audit-level=high
         continue-on-error: true
+
+      - name: Check for known vulnerabilities (report only)
+        run: npm audit --json > audit-report.json || true
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+          retention-days: 30
