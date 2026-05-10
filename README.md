@@ -6,9 +6,7 @@ A production-grade, enterprise-scale **Multi-Tenant SaaS API Gateway** built wit
 
 ## Architecture
 
-<p align="center">
-  <img src="docs/images/architecture.png" alt="System Architecture Diagram" width="700" />
-</p>
+![System Architecture](docs/images/architecture.png)
 
 ---
 
